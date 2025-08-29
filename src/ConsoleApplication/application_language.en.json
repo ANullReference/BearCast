@@ -1,0 +1,7 @@
+{
+    "ApplicationLanguage" :
+    {
+        "FileNotFound" : "File {pathToFile} was not found.",
+        "TSN": ""
+    }
+}
