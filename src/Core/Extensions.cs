@@ -1,13 +1,9 @@
-using System.Reflection.Metadata.Ecma335;
-using System.Text.RegularExpressions;
-
 namespace Core;
 
 public static class Extensions
 {
     /// <summary>
-    /// turning #EXT-X-STREAM-INF:PROGRAM-ID=1,BANDWIDTH=2149280,CODECS=\"mp4a.40.2,avc1.64001f\",RESOLUTION=1280x720,NAME=\"720\"
-    /// to key value pair
+    /// Remove comma's that are within double quotes. 
     /// </summary>
     /// <param name="s"></param>
     /// <returns></returns>
