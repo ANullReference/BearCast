@@ -18,16 +18,10 @@ public class RequestManager : IRequestManager
     public async Task<string> HttpRequest(string url)
     {
         ArgumentException.ThrowIfNullOrEmpty(url);
-
-        HttpRequestMessage httpRequestMessage = new()
-        {
-            RequestUri = new Uri(url)
-        };
-
         try
         {
-            HttpClient client = _httpClientFactory.CreateClient();
-            HttpResponseMessage response = await client.SendAsync(httpRequestMessage);
+            HttpClient client = _httpClientFactory.CreateClient(Constants.HttpClientUrl);
+            HttpResponseMessage response = await client.GetAsync(url);
 
             if (!response.IsSuccessStatusCode)
             {

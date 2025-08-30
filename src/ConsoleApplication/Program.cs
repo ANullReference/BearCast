@@ -12,7 +12,10 @@ using Core.Features.Playlist;
 
 string language = CultureInfo.CurrentCulture.TwoLetterISOLanguageName;
 
-//todo: check in app settings is language is supported. 
+
+
+
+//todo: check in app settings if language is supported. 
 if (string.IsNullOrEmpty(language))
 {
     language = "en";
@@ -42,21 +45,22 @@ services.AddTransient<IPlayManager, PlayManager>();
 services.AddTransient<IPlaylistManager, PlaylistManager>();
 services.AddTransient<IRequestManager, RequestManager>();
 
-services.AddHttpClient(Constants.HttpClientUrl);
+string baseUri = config.GetValue<string>("AppSettings:BaseUri") ?? string.Empty;
+
+services.AddHttpClient(Constants.HttpClientUrl, (httpClient) =>
+{
+    httpClient.BaseAddress = new Uri(baseUri);
+});
 
 // Build service provider
 var serviceProvider = services.BuildServiceProvider();
 
-//IPlayManager? serviceManager = serviceProvider.GetService<IPlayManager>();
+IPlayManager? serviceManager = serviceProvider.GetService<IPlayManager>();
 IRequestManager? manager = serviceProvider.GetService<IRequestManager>();
-//serviceManager?.Play(@"E:\Phone Back up\20240928_082005.mp4");
-//serviceManager?.PlayM3u8(@"https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8");
 
-if (manager != null)
+
+if (manager != null && serviceManager != null)
 {
-    var response = await manager.GetPlaylist(@"https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8");
+    Playlist response = await manager.GetPlaylist(@"x36xhzz.m3u8");
+    ResponseObject<int> responseObjec = await serviceManager.PlayM3u8(baseUri + response.Channels.First().Url);
 }
-
-
-// See https://aka.ms/new-console-template for more information
-//Console.WriteLine("Hello, World!");
