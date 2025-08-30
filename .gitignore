@@ -16,6 +16,7 @@ obj/
 
 # Build logs
 *.log
+log.txt
 
 # NuGet
 *.nupkg
