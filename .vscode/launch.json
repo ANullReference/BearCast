@@ -1,0 +1,19 @@
+{
+    "version":"0.2.0",
+    "configurations": [
+        {
+            "name": ".NET Core Launch (console)",
+            "type": "coreclr",
+            "request": "launch",
+            "program": "${workspaceFolder}/src/ConsoleApplication/bin/Debug/net9.0/ConsoleApplication.dll",
+               "args": 
+               [
+                "-m3u8",
+                "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8"
+                ],
+            "cwd": "${workspaceFolder}",
+            "stopAtEntry": false,
+            "console": "internalConsole"
+        }
+    ]
+}

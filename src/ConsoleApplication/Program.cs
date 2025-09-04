@@ -2,18 +2,20 @@
 using Core;
 using Core.Abstraction;
 using Infrastructure;
-using System.CommandLine;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Configuration;
 using Core.Domain;
 using LibVLCSharp.Shared;
 using System.Globalization;
 using Core.Features.Playlist;
+using ConsoleApplication.Abstractions;
+using ConsoleApplication.OptionCommandLineHandler;
+using System.CommandLine;
 
 
 class Program
 {
-    public async Task Main(string[] args)
+    public static async Task<int> Main(string[] args)
     {
         string language = CultureInfo.CurrentCulture.TwoLetterISOLanguageName;
 
@@ -46,25 +48,47 @@ class Program
         services.AddTransient<IPlayManager, PlayManager>();
         services.AddTransient<IPlaylistManager, PlaylistManager>();
         services.AddTransient<IRequestManager, RequestManager>();
+        services.AddTransient<ICommandLineHandler, CommandLineHandler>();
 
-        string baseUri = config.GetValue<string>("AppSettings:BaseUri") ?? string.Empty;
+        // string baseUri = config.GetValue<string>("AppSettings:BaseUri") ?? string.Empty;
+        // services.AddHttpClient(Constants.HttpClientUrl, (httpClient) =>
+        // {
+        //     httpClient.BaseAddress = new Uri(baseUri);
+        // });
 
-        services.AddHttpClient(Constants.HttpClientUrl, (httpClient) =>
-        {
-            httpClient.BaseAddress = new Uri(baseUri);
-        });
+        services.AddHttpClient(Constants.HttpClientUrl);
 
         // Build service provider
         var serviceProvider = services.BuildServiceProvider();
 
-        IPlayManager? serviceManager = serviceProvider.GetService<IPlayManager>();
-        IRequestManager? manager = serviceProvider.GetService<IRequestManager>();
-
-
-        if (manager != null && serviceManager != null)
+        ICommandLineHandler? commandLineHandler = serviceProvider.GetService<ICommandLineHandler>();
+        
+        if (commandLineHandler != null)
         {
-            Playlist response = await manager.GetPlaylist(@"x36xhzz.m3u8");
-            ResponseObject<int> responseObjec = await serviceManager.PlayM3u8(baseUri + response.Channels.First().Url);
+            string command = string.Empty;
+            RootCommand rootCommand = await commandLineHandler.CreateRootCommand();
+            
+            do
+            {
+                ParseResult parseResult = rootCommand.Parse(args);
+                Environment.ExitCode = await parseResult.InvokeAsync();
+                Console.Write("Command: ");
+                command = Console.ReadLine() ?? string.Empty;
+                args = command.Split(" ");
+            }
+            while (!string.IsNullOrEmpty(command));
         }
+
+        return Environment.ExitCode;
+
+        // IPlayManager? serviceManager = serviceProvider.GetService<IPlayManager>();
+        // IRequestManager? manager = serviceProvider.GetService<IRequestManager>()
+
+        // if (manager != null && serviceManager != null)
+        // {
+        //     Handlers handlers = new(serviceManager, manager);
+        //     // Playlist response = await manager.GetPlaylist(@"x36xhzz.m3u8");
+        //     // ResponseObject<int> responseObjec = await serviceManager.PlayM3u8(baseUri + response.Channels.First().Url);
+        // }
     }
 }
