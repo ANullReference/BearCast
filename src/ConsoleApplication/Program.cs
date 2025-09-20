@@ -80,15 +80,5 @@ class Program
         }
 
         return Environment.ExitCode;
-
-        // IPlayManager? serviceManager = serviceProvider.GetService<IPlayManager>();
-        // IRequestManager? manager = serviceProvider.GetService<IRequestManager>()
-
-        // if (manager != null && serviceManager != null)
-        // {
-        //     Handlers handlers = new(serviceManager, manager);
-        //     // Playlist response = await manager.GetPlaylist(@"x36xhzz.m3u8");
-        //     // ResponseObject<int> responseObjec = await serviceManager.PlayM3u8(baseUri + response.Channels.First().Url);
-        // }
     }
 }

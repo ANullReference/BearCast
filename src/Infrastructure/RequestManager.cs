@@ -8,6 +8,7 @@ public class RequestManager : IRequestManager
 {
     private IHttpClientFactory _httpClientFactory;
     private ILogger _logger;
+    private Playlist? _playlist;// TODO: consider ICacheManager to handle playlist instance
 
     public RequestManager(IHttpClientFactory httpClientFactory, ILogger logger)
     {
@@ -63,18 +64,29 @@ public class RequestManager : IRequestManager
     /// <returns></returns>
     public async Task<Playlist> GetPlaylist(string url)
     {
+        if (!Uri.IsWellFormedUriString(url, UriKind.Absolute))
+        {
+            throw new Exception($"{url} not well formed");
+        }
+
+        _logger.Debug($"Getting playlist in method {nameof(GetPlaylist)}");
+
+        if (_playlist != null)
+        {
+            return _playlist;
+        }
+
         string playlistString = await HttpRequest(url);
         playlistString = playlistString.Trim();
 
-        Playlist playlist = new();
+        _playlist = new();
 
         using (var reader = new StringReader(playlistString))
         {
             string firstLine = reader.ReadLine() ?? string.Empty;
-            playlist.ExtM3U = firstLine;
-            
-            string line = string.Empty;
-            string nextLine = string.Empty;
+            _playlist.ExtM3U = firstLine;
+
+            string line, nextLine;
 
             while (reader.Peek() != -1)
             {
@@ -86,7 +98,6 @@ public class RequestManager : IRequestManager
                     _logger.Warning("Empty entry on this line: line 1 {line1} and line 2 {line2}", line, nextLine);
                     continue;
                 }
-
 
                 line = line.RemoveComasWithinDoubleQuotes();
                 string[] data = line.Split(",");
@@ -118,14 +129,32 @@ public class RequestManager : IRequestManager
                             _logger.Warning("{Key} is not supported. Moving next", keyValue[0]);
                             break;
                     }
-                    
                 }
 
                 channel.Url = nextLine;
-                playlist.Channels.Add(channel);
+                _playlist.Channels.Add(channel);
             }
         }
 
-        return playlist;
+        return _playlist;
+    }
+
+    public async Task<Playlist> RefreshPlaylist(string url)
+    {
+        _logger.Debug("Refresh playlist request in method {methodName}", nameof(RefreshPlaylist));
+        _playlist = null;
+        return await GetPlaylist(url);
+    }  
+
+    public async Task<IEnumerable<Channel>> SearchPlaylist(string name)
+    {
+        ArgumentNullException.ThrowIfNull(name);
+        ArgumentNullException.ThrowIfNull(_playlist);
+
+        _logger.Debug("Searching playlist In method {methodName}", nameof(SearchPlaylist));
+
+        List<Channel> channels = [.. _playlist.Channels.Where(w => w.NAME.Contains(name))];
+
+        return await Task.FromResult(channels);
     }
 }
