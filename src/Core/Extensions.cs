@@ -2,6 +2,19 @@ namespace Core;
 
 public static class Extensions
 {
+
+
+    public static string CleanString(this string s)
+    {
+        if (string.IsNullOrEmpty(s))
+        {
+            return s;
+        }
+        
+        return s.Replace("\"", string.Empty);
+    }
+
+
     /// <summary>
     /// Remove comma's that are within double quotes. 
     /// </summary>

@@ -37,7 +37,7 @@ public class CommandLineHandler(IPlayManager playManager, IRequestManager reques
 
             foreach (Channel channel in _playList.Channels)
             {
-                _logger.Information(channel.NAME);
+                _logger.Information($"{channel.NAME} <--> {channel.Url}");
             }
         });
 
@@ -56,7 +56,7 @@ public class CommandLineHandler(IPlayManager playManager, IRequestManager reques
 
             foreach (Channel channel in channels)
             {
-                _logger.Information(channel.NAME);
+                _logger.Information($"{channel.NAME} <--> {channel.Url}");
             }
         });
 
@@ -70,11 +70,11 @@ public class CommandLineHandler(IPlayManager playManager, IRequestManager reques
             m3u8UrlArgument
         };
 
-        setM3u8Command.SetAction( (parseResult) =>
+        setM3u8Command.SetAction((parseResult) =>
         {
             // Debug logging
             _logger.Verbose("Parsing result tokens: {tokens}", 
-                string.Join(", ", parseResult.Tokens.Select(t => t.Value)));
+            string.Join(", ", parseResult.Tokens.Select(t => t.Value)));
 
             var optionValue = parseResult.GetValue(m3u8UrlArgument);
              _logger.Verbose("Option value: '{value}'", optionValue ?? "NULL");
@@ -82,10 +82,43 @@ public class CommandLineHandler(IPlayManager playManager, IRequestManager reques
             _httpLink = optionValue ?? string.Empty;
             _logger.Verbose("Final httpLink: '{httpLink}'", _httpLink);
         });
-        
+
+
+
+       // Define the positional argument
+        Argument<string> playUrlArgument = new("playUrl");
+        // Define the command
+        Command playUrlCommand = new (
+            name: "-play_url",
+            description: $"Play url with configured media player")
+        {
+            playUrlArgument
+        };
+
+        playUrlCommand.SetAction(async (parseResult) =>
+        {
+            // Debug logging
+            _logger.Verbose("Parsing result tokens: {tokens}",
+            string.Join(", ", parseResult.Tokens.Select(t => t.Value)));
+
+            string urlOption = parseResult.GetValue(playUrlArgument) ?? string.Empty;
+            _logger.Verbose("Option value: '{value}'", urlOption ?? "NULL");
+
+            if (string.IsNullOrEmpty(urlOption))
+            {
+                //todo: log command error here maybe
+                return;
+            }
+
+            ResponseObject<int> responseObject = await _playManager.PlayM3u8(urlOption);
+        });
+ 
+
+      
         rootCommand.Subcommands.Add(searchChannelCommand);
         rootCommand.Subcommands.Add(playListCommand);
         rootCommand.Subcommands.Add(setM3u8Command);
+        rootCommand.Subcommands.Add(playUrlCommand);
 
         return await Task.FromResult(rootCommand);
     }

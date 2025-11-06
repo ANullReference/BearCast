@@ -79,12 +79,13 @@ public class RequestManager : IRequestManager
         string playlistString = await HttpRequest(url);
         playlistString = playlistString.Trim();
 
-        _playlist = new();
+        //_playlist = new Playlist();
 
-        using (var reader = new StringReader(playlistString))
+        using (StringReader reader = new (playlistString))
         {
             string firstLine = reader.ReadLine() ?? string.Empty;
-            _playlist.ExtM3U = firstLine;
+            
+            Playlist playlist = new Playlist(){ ExtM3U = firstLine } ;
 
             string line, nextLine;
 
@@ -100,41 +101,74 @@ public class RequestManager : IRequestManager
                 }
 
                 line = line.RemoveComasWithinDoubleQuotes();
-                string[] data = line.Split(",");
+                //string[] data = line.Split(",");
+
+                string[] data = line.Split(" ");
 
                 Channel channel = new();
 
-                foreach (string d in data)
+                foreach (string d in data.Where(w => w.Contains(':') || w.Contains('=')))
                 {
-                    string[] keyValue = d.Split("=");
+                    string[] keyValue = d.Contains('=') ? d.Split('=') : d.Split(':');
+                    string key = keyValue[0].ToUpper().Trim();
 
-                    switch (keyValue[0].ToUpper().Trim())
+                    if (key.Contains("#EXT", StringComparison.OrdinalIgnoreCase))
                     {
-                        case "#EXT-X-STREAM-INF:PROGRAM-ID":
-                            channel.ProgramId = keyValue[1];
-                            break;
-                        case "BANDWIDTH":
-                            channel.Bandwidth = keyValue[1];
-                            break;
-                        case "CODECS":
-                            channel.Codecs = keyValue[1];
-                            break;
-                        case "RESOLUTION":
-                            channel.Resolution = keyValue[1];
-                            break;
-                        case "NAME":
-                            channel.NAME = keyValue[1];
-                            break;
-                        default:
-                            _logger.Warning("{Key} is not supported. Moving next", keyValue[0]);
-                            break;
+                        channel.Id = keyValue[1].CleanString();
+                    }
+                    else if (key.Contains("BANDWIDTH", StringComparison.OrdinalIgnoreCase))
+                    {
+                        channel.Bandwidth = keyValue[1].CleanString();
+                    }
+                    else if (key.Contains("CODECS", StringComparison.OrdinalIgnoreCase))
+                    {
+                        channel.Codecs = keyValue[1].CleanString();
+                    }
+                    else if (key.Contains("RESOLUTION", StringComparison.OrdinalIgnoreCase))
+                    {
+                        channel.Resolution = keyValue[1].CleanString();
+                    }
+                    else if (key.Contains("NAME", StringComparison.OrdinalIgnoreCase))
+                    {
+                        channel.NAME = keyValue[1].CleanString();
+                    }
+                    else if (key.Contains("LOGO", StringComparison.OrdinalIgnoreCase))
+                    {
+                        channel.LogoUrl = keyValue[1].CleanString();
+                    }
+                    else if (key.Contains("ID", StringComparison.OrdinalIgnoreCase))
+                    {
+                        channel.ProgramId = keyValue[1].CleanString();
+                    }
+                    else if (key.Contains("group-title", StringComparison.OrdinalIgnoreCase))
+                    {
+                        string[] groupTitle = keyValue[1].CleanString().Split(",");
+
+                        channel.Group = groupTitle[0].CleanString();
+
+                        channel.Title = groupTitle.Length > 1 ? groupTitle[1].CleanString() : string.Empty;
+                    }
+                    else if (key.Contains("Group", StringComparison.OrdinalIgnoreCase))
+                    {
+                        channel.Group = keyValue[1].CleanString();
+                    }
+                    else if (key.Contains("Title", StringComparison.OrdinalIgnoreCase))
+                    {
+                        channel.Title = keyValue[1].CleanString();
+                    }
+                    else
+                    {
+                        _logger.Warning("{Key} is not supported. Moving next", keyValue[0]);
                     }
                 }
 
                 channel.Url = nextLine;
-                _playlist.Channels.Add(channel);
+                playlist.Channels.Add(channel);
             }
+
+            _playlist = playlist;
         }
+
 
         return _playlist;
     }

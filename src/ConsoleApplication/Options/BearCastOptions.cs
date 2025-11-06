@@ -23,19 +23,10 @@ public class BearCastOptions
             Console.WriteLine($"Hello {name}!");
         });
 
-
-        
-
-
         RootCommand rootCommand = new();
         rootCommand.Description = "This application will run http videos from m3u8 links using command line.";
 
-        
-        
-
-
         rootCommand.Add(setm3u8Command);
-
 
         return rootCommand;
     }
