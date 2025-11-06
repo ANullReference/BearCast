@@ -3,6 +3,7 @@ using Microsoft.Extensions.Options;
 using Serilog;
 using Serilog.Core;
 using Serilog.Events;
+using System.Text;
 using ILogger = Core.Abstraction.ILogger;
 
 namespace Infrastructure;
@@ -32,6 +33,11 @@ public class MyLogger : ILogger
             BareCastLogLevel.Fatal => LogEventLevel.Fatal,
             _ => throw new NotSupportedException($"Log level {_appSettings.LogLevel} not supported"),
         };
+
+
+        Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
+        Console.OutputEncoding = Encoding.GetEncoding("utf-8");
+        Console.InputEncoding = Encoding.GetEncoding("utf-8");
 
         _log = new LoggerConfiguration()
             .WriteTo.Console()
