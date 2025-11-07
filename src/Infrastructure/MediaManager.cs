@@ -2,6 +2,8 @@ using Core.Abstraction;
 using Core.Domain;
 using LibVLCSharp.Shared;
 using Microsoft.Extensions.Options;
+using System.Threading.Channels;
+using Channel = Core.Domain.Channel;
 
 namespace Infrastructure;
 
@@ -39,51 +41,104 @@ public class MediaPlayerWrapper : IMediaPlayerWrapper
         LibVLCSharp.Shared.Core.Initialize();
     }
 
-    public async Task Play(string pathToFile)
+    public async Task<MediaPlayerStatusEnum> Play(string pathToFile, CancellationToken cancellationToken)
     {
-        using Media media = new(_libVlc, new Uri(pathToFile));
-        using MediaPlayer mediaplayer = new(media);
+        ArgumentException.ThrowIfNullOrEmpty(pathToFile, nameof(pathToFile));
+
+        Task task = Task.Run(async () =>
         {
-            // Create a TaskCompletionSource to signal when the video finishes
-            TaskCompletionSource<bool> videoFinishedSource = new();
+            using Media media = new(_libVlc, pathToFile, FromType.FromLocation);
+            using MediaPlayer mediaplayer = new(media);
 
-            // Subscribe to the EndReached event
-            mediaplayer.EndReached += (sender, e) =>
+            try
             {
-                _log.Verbose("Video {pathToFile} ended", pathToFile);
-                videoFinishedSource.SetResult(true);
-            };
+                // Create a TaskCompletionSource to signal when the video finishes
+                TaskCompletionSource<bool> videoFinishedSource = new();
 
-            mediaplayer.Play();
-            bool b = await videoFinishedSource.Task;
+                // Subscribe to the EndReached event
+                mediaplayer.EndReached += (sender, e) =>
+                {
+                    _log.Verbose("Video {pathToFile} ended", pathToFile);
+                    videoFinishedSource.SetResult(true);
+                };
 
-            Console.ReadLine();
+                mediaplayer.Play();
+                Console.ReadKey();
 
-            mediaplayer.Stop();
+                bool b = await videoFinishedSource.Task;
+
+                mediaplayer.Stop();
+            }
+            catch (TaskCanceledException)
+            {
+                mediaplayer?.Stop();
+                _log.Information("Playback of file {pathToFile} was cancelled.",pathToFile);
+            }
+            catch (Exception ex)
+            {
+                _log.Error("An error occurred while trying to play file {pathToFile}. Exception: {exceptionMessage}",
+                    pathToFile, ex.Message);
+            }
+        }, cancellationToken);
+
+
+        if (task.IsCompletedSuccessfully || task.IsCanceled)
+        {
+            return MediaPlayerStatusEnum.Stopped;
         }
+
+        return await Task.FromResult(MediaPlayerStatusEnum.Playing);
+
+
     }
 
-    public async Task PlayM3u8(string httpLink)
+    public async Task<MediaPlayerStatusEnum> Play(Channel channel, CancellationToken cancellationToken)
     {
-        using Media media = new(_libVlc, httpLink, FromType.FromLocation);
-        using MediaPlayer mediaplayer = new(media);
+        ArgumentNullException.ThrowIfNull(channel, nameof(channel));    
+        ArgumentException.ThrowIfNullOrEmpty(channel.Url, nameof(channel.Url));
+
+        Task task = Task.Run(async () =>
         {
-            // Create a TaskCompletionSource to signal when the video finishes
-            TaskCompletionSource<bool> videoFinishedSource = new();
+            using Media media = new(_libVlc, channel.Url, FromType.FromLocation);
+            using MediaPlayer mediaplayer = new(media);
 
-            // Subscribe to the EndReached event
-            mediaplayer.EndReached += (sender, e) =>
+            try
+            {    
+                // Create a TaskCompletionSource to signal when the video finishes
+                TaskCompletionSource<bool> videoFinishedSource = new();
+
+                // Subscribe to the EndReached event
+                mediaplayer.EndReached += (sender, e) =>
+                {
+                    _log.Verbose("Video name: {name} link:{httpLink} ended", channel.NAME, channel.Url);
+                    videoFinishedSource.SetResult(true);
+                };
+
+                mediaplayer.Play();
+
+                bool b = await videoFinishedSource.Task;
+
+                mediaplayer.Stop();
+            }
+            catch(TaskCanceledException)
             {
-                _log.Verbose("Video {httpLink} ended", httpLink);
-                videoFinishedSource.SetResult(true);
-            };
+                mediaplayer?.Stop();
+                _log.Information("Playback of channel {channelName} with url {channelUrl} was cancelled.",
+                    channel.NAME, channel.Url);
+            }
+            catch (Exception ex)
+            {
+                _log.Error("An error occurred while trying to play channel {channelName} with url {channelUrl}. Exception: {exceptionMessage}",
+                    channel.NAME, channel.Url, ex.Message);
+            }
+        }, cancellationToken);
 
-            mediaplayer.Play();
- 
-            Console.ReadLine();
-            bool b = await videoFinishedSource.Task;
 
-            mediaplayer.Stop();
+        if (task.IsCompletedSuccessfully || task.IsCanceled)
+        {
+            return MediaPlayerStatusEnum.Stopped;
         }
+
+        return await Task.FromResult(MediaPlayerStatusEnum.Playing);
     }
 }

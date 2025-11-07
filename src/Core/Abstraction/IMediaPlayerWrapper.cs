@@ -4,7 +4,7 @@ namespace Core.Abstraction;
 
 public interface IMediaPlayerWrapper
 {
-    Task Play(string pathToFile);
+    Task<MediaPlayerStatusEnum> Play(string pathToFile, CancellationToken cancellationToken);
 
-    Task PlayM3u8(string httpLink);
+    Task<MediaPlayerStatusEnum> Play(Channel channel, CancellationToken cancellationToken);
 }

@@ -12,6 +12,7 @@ public class MediaManagerTest
     private Mock<LibVLC> _libVlc;
     private Mock<IMediaPlayerWrapper> _mediaPlayerWrapper;
     private Mock<IFileManager> _fileManager;
+    private CancellationToken _cancellationToken;
 
     public MediaManagerTest()
     {
@@ -19,6 +20,7 @@ public class MediaManagerTest
         _libVlc = new Mock<LibVLC>();
         _mediaPlayerWrapper = new Mock<IMediaPlayerWrapper>();
         _fileManager = new Mock<IFileManager>();
+        _cancellationToken = new CancellationToken();
     }
 
     private PlayManager SystemUnderTest => new (_log.Object, _mediaPlayerWrapper.Object, _fileManager.Object);
@@ -28,14 +30,14 @@ public class MediaManagerTest
     [InlineData("")]
     public async Task Play_ShouldThrowException(string path)
     {
-        await Assert.ThrowsAnyAsync<ArgumentException>(() => SystemUnderTest.Play(path));
+        await Assert.ThrowsAnyAsync<ArgumentException>(() => SystemUnderTest.Play(path, _cancellationToken));
     }
 
     [Theory]
     [InlineData("//somepath/aaa/")]
     public async Task Play_PathNotFound_ShouldLogError(string path)
     {
-        ResponseObject<int> responseObject = await SystemUnderTest.Play(path);
+        ResponseObject<int> responseObject = await SystemUnderTest.Play(path, _cancellationToken);
 
         _log.Verify(s => s.Error(It.IsAny<string>(), It.IsAny<object[]>()), Times.Once);
 
@@ -47,9 +49,9 @@ public class MediaManagerTest
     public async Task Play_PathFound_ShouldSucceed(string path)
     {
         _fileManager.Setup(s => s.Exists(It.IsAny<string>())).Returns(true);
-        _mediaPlayerWrapper.Setup(s => s.Play(It.IsAny<string>()));      
+        _mediaPlayerWrapper.Setup(s => s.Play(It.IsAny<string>(), It.IsAny<CancellationToken>()));      
 
-        ResponseObject<int> responseObject = await SystemUnderTest.Play(path);
+        ResponseObject<int> responseObject = await SystemUnderTest.Play(path, _cancellationToken);
         Assert.Equal(ResponseEnum.Success, responseObject.Response);
     }
 }

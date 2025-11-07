@@ -45,7 +45,7 @@ class Program
         services.AddSingleton<IMediaPlayerWrapper, MediaPlayerWrapper>();
         services.AddSingleton((libVlc) => new LibVLC(enableDebugLogs: config.GetValue<bool>("AppSettings:EnableDebugLogs")));
         services.AddSingleton<IFileManager, FileManager>();
-        services.AddTransient<IPlayManager, PlayManager>();
+        services.AddTransient<IPlayRequestManager, PlayManager>();
         services.AddTransient<IPlaylistManager, PlaylistManager>();
         services.AddTransient<IRequestManager, RequestManager>();
         services.AddTransient<ICommandLineHandler, CommandLineHandler>();
@@ -62,7 +62,8 @@ class Program
         var serviceProvider = services.BuildServiceProvider();
 
         ICommandLineHandler? commandLineHandler = serviceProvider.GetService<ICommandLineHandler>();
-        
+        CancellationToken cancellationToken = new CancellationToken();
+
         if (commandLineHandler != null)
         {
             string command = string.Empty;
@@ -71,7 +72,7 @@ class Program
             do
             {
                 ParseResult parseResult = rootCommand.Parse(args);
-                Environment.ExitCode = await parseResult.InvokeAsync();
+                Environment.ExitCode = await parseResult.InvokeAsync(null,cancellationToken);
                 Console.Write("Command: ");
                 command = Console.ReadLine() ?? string.Empty;
                 args = command.Split(" ");

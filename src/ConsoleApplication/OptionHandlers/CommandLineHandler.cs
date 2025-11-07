@@ -9,14 +9,13 @@ namespace ConsoleApplication.OptionCommandLineHandler;
 /// <summary>
 /// 
 /// </summary>
-public class CommandLineHandler(IPlayManager playManager, IRequestManager requestManager, ILogger logger) : ICommandLineHandler
+public class CommandLineHandler(IPlayRequestManager playManager, IRequestManager requestManager, ILogger logger) : ICommandLineHandler
 {
-    private IPlayManager _playManager = playManager;
+    private IPlayRequestManager _playManager = playManager;
     private IRequestManager _requestManager = requestManager;
     private ILogger _logger = logger;
     private string _httpLink = string.Empty;
     private Playlist _playList = new();
-
 
     public async Task<RootCommand> CreateRootCommand()
     {
@@ -110,11 +109,15 @@ public class CommandLineHandler(IPlayManager playManager, IRequestManager reques
                 return;
             }
 
-            ResponseObject<int> responseObject = await _playManager.PlayM3u8(urlOption);
+            Channel channelToPlay = new()
+            {
+                Url = urlOption
+            };  
+
+            CancellationToken cancellationToken = new();
+            ResponseObject<int> responseObject = await _playManager.Play(channelToPlay, cancellationToken);
         });
  
-
-      
         rootCommand.Subcommands.Add(searchChannelCommand);
         rootCommand.Subcommands.Add(playListCommand);
         rootCommand.Subcommands.Add(setM3u8Command);

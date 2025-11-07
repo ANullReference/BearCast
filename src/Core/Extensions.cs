@@ -2,8 +2,6 @@ namespace Core;
 
 public static class Extensions
 {
-
-
     public static string CleanString(this string s)
     {
         if (string.IsNullOrEmpty(s))

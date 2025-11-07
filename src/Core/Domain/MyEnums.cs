@@ -17,3 +17,11 @@ public enum ResponseEnum
     Success
 }
 
+
+public enum MediaPlayerStatusEnum
+{
+    Stopped,
+    Playing,
+    Paused,
+    Recording
+}
