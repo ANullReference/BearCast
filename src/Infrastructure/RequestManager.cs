@@ -130,7 +130,7 @@ public class RequestManager : IRequestManager
                     }
                     else if (key.Contains("NAME", StringComparison.OrdinalIgnoreCase))
                     {
-                        channel.NAME = keyValue[1].CleanString();
+                        channel.Name = keyValue[1].CleanString();
                     }
                     else if (key.Contains("LOGO", StringComparison.OrdinalIgnoreCase))
                     {
@@ -187,7 +187,7 @@ public class RequestManager : IRequestManager
 
         _logger.Debug("Searching playlist In method {methodName}", nameof(SearchPlaylist));
 
-        List<Channel> channels = [.. _playlist.Channels.Where(w => w.NAME.Contains(name))];
+        List<Channel> channels = [.. _playlist.Channels.Where(w => w.Name.Contains(name))];
 
         return await Task.FromResult(channels);
     }

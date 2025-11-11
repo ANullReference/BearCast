@@ -1,8 +1,7 @@
-using ConsoleApplication.Abstractions;
-using Core;
+using System.CommandLine;
 using Core.Abstraction;
 using Core.Domain;
-using System.CommandLine;
+using ConsoleApplication.Abstractions;
 using System.CommandLine.NamingConventionBinder;
 
 namespace ConsoleApplication.OptionCommandLineHandler;
@@ -10,13 +9,14 @@ namespace ConsoleApplication.OptionCommandLineHandler;
 /// <summary>
 /// 
 /// </summary>
-public class CommandLineHandler(IPlayRequestManager playManager, IRequestManager requestManager, ILogger logger) : ICommandLineHandler
+public class CommandLineHandler(IPlayManager playManager, IRequestManager requestManager, ILogger logger) : ICommandLineHandler
 {
-    private IPlayRequestManager _playManager = playManager;
+    private IPlayManager _playManager = playManager;
     private IRequestManager _requestManager = requestManager;
     private ILogger _logger = logger;
     private string _httpLink = string.Empty;
     private Playlist _playList = new();
+
 
     public async Task<RootCommand> CreateRootCommand()
     {
@@ -37,7 +37,7 @@ public class CommandLineHandler(IPlayRequestManager playManager, IRequestManager
 
             foreach (Channel channel in _playList.Channels)
             {
-                _logger.Information($"{channel.NAME} <--> {channel.Url}");
+                _logger.Information($"{channel.Name} <--> {channel.Url}");
             }
         });
 
@@ -56,7 +56,7 @@ public class CommandLineHandler(IPlayRequestManager playManager, IRequestManager
 
             foreach (Channel channel in channels)
             {
-                _logger.Information($"{channel.NAME} <--> {channel.Url}");
+                _logger.Information($"{channel.Name} <--> {channel.Url}");
             }
         });
 
@@ -85,7 +85,7 @@ public class CommandLineHandler(IPlayRequestManager playManager, IRequestManager
 
 
 
-        // Define the positional argument
+       // Define the positional argument
         Argument<string> playUrlArgument = new("playUrl");
         // Define the command
         Command playUrlCommand = new (
@@ -110,37 +110,15 @@ public class CommandLineHandler(IPlayRequestManager playManager, IRequestManager
                 return;
             }
 
-            Channel channelToPlay = new()
-            {
-                Url = urlOption
-            };  
-
-            CancellationToken cancellationToken = new();
-            ResponseObject<int> responseObject = await _playManager.Play(channelToPlay, cancellationToken);
+            ResponseObject<int> responseObject = await _playManager.PlayM3u8(urlOption);
         });
+ 
 
-
-        // Define the positional argument
-        //Argument<string> stopArgument = new("stop");
-        // Define the command
-        Command stopCommand = new(
-            name: "-stop",
-            description: $"Stop");
-
-        stopCommand.SetAction(async (parseResult) =>
-        {
-            // Debug logging
-            _logger.Verbose("Parsing result tokens: {tokens}",
-            string.Join(", ", parseResult.Tokens.Select(t => t.Value)));
-
-            ResponseObject<int> responseObject = await _playManager.Stop();
-        });
-
+      
         rootCommand.Subcommands.Add(searchChannelCommand);
         rootCommand.Subcommands.Add(playListCommand);
         rootCommand.Subcommands.Add(setM3u8Command);
         rootCommand.Subcommands.Add(playUrlCommand);
-        rootCommand.Subcommands.Add(stopCommand);
 
         return await Task.FromResult(rootCommand);
     }
