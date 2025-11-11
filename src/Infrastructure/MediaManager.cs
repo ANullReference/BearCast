@@ -2,7 +2,6 @@ using Core.Abstraction;
 using Core.Domain;
 using LibVLCSharp.Shared;
 using Microsoft.Extensions.Options;
-using System.Threading.Channels;
 using Channel = Core.Domain.Channel;
 
 namespace Infrastructure;
@@ -26,119 +25,146 @@ public class MediaPlayerWrapper : IMediaPlayerWrapper
     private ILogger _log;
     private ApplicationLanguage _appLanguage;
     private IHttpClientFactory _httpClientFactory;
+    CancellationTokenSource _cancellationTokenSource;// todo: dependency inject this into a wrapper and imitate the cancel behavior
+
+    //private Task? _playVideo;
+
+    private static readonly int MICRO_SLEEP = 1000;
+
 
     /// <summary>
     /// Concrete implementation of video playing.
     /// </summary>
     /// <param name="libVLC"></param>
-    public MediaPlayerWrapper(LibVLC libVLC, ILogger logger, IOptions<ApplicationLanguage> options, IHttpClientFactory httpClientFactory)
+    public MediaPlayerWrapper(LibVLC libVLC, ILogger logger, IOptions<ApplicationLanguage> options, IHttpClientFactory httpClientFactory, CancellationTokenSource cancellationTokenSource)
     {
         _libVlc = libVLC;
         _log = logger;
         _appLanguage = options.Value;
         _httpClientFactory = httpClientFactory;
 
+        _cancellationTokenSource = cancellationTokenSource;// todo: dependency inject this into a wrapper and imitate the cancel behavior
         LibVLCSharp.Shared.Core.Initialize();
     }
 
-    public async Task<MediaPlayerStatusEnum> Play(string pathToFile, CancellationToken cancellationToken)
+
+    private async Task<MediaPlayerStatusEnum> PlayVideo(Channel channel)
     {
-        ArgumentException.ThrowIfNullOrEmpty(pathToFile, nameof(pathToFile));
+        ArgumentException.ThrowIfNullOrEmpty(channel.Url, nameof(channel.Url)); 
 
-        Task task = Task.Run(async () =>
+        using Media media = new(_libVlc, channel.Url, FromType.FromLocation);
+        using MediaPlayer mediaplayer = new(media);
+
+        try
         {
-            using Media media = new(_libVlc, pathToFile, FromType.FromLocation);
-            using MediaPlayer mediaplayer = new(media);
+            // Create a TaskCompletionSource to signal when the video finishes
+            TaskCompletionSource<bool> videoFinishedSource = new();
 
-            try
+            // Subscribe to the EndReached event
+            mediaplayer.EndReached += (sender, e) =>
             {
-                // Create a TaskCompletionSource to signal when the video finishes
-                TaskCompletionSource<bool> videoFinishedSource = new();
-
-                // Subscribe to the EndReached event
-                mediaplayer.EndReached += (sender, e) =>
-                {
-                    _log.Verbose("Video {pathToFile} ended", pathToFile);
-                    videoFinishedSource.SetResult(true);
-                };
-
-                mediaplayer.Play();
-                Console.ReadKey();
-
-                bool b = await videoFinishedSource.Task;
-
+                _log.Verbose("Video name: {name} link:{url} ended", channel.NAME, channel.Url);
                 mediaplayer.Stop();
-            }
-            catch (TaskCanceledException)
-            {
-                mediaplayer?.Stop();
-                _log.Information("Playback of file {pathToFile} was cancelled.",pathToFile);
-            }
-            catch (Exception ex)
-            {
-                _log.Error("An error occurred while trying to play file {pathToFile}. Exception: {exceptionMessage}",
-                    pathToFile, ex.Message);
-            }
-        }, cancellationToken);
+                videoFinishedSource.SetResult(true);
+            };
 
+            mediaplayer.Play();
 
-        if (task.IsCompletedSuccessfully || task.IsCanceled)
+            await Task.Delay(MICRO_SLEEP, _cancellationTokenSource.Token);
+
+            // Keep alive loop — allows cancellation
+            while (mediaplayer.IsPlaying)
+            {
+                _cancellationTokenSource.Token.ThrowIfCancellationRequested();
+                await Task.Delay(MICRO_SLEEP, _cancellationTokenSource.Token); // cancellable delay
+            }
+
+            bool b = await videoFinishedSource.Task;
+
+            mediaplayer.Stop();
+            return await Task.FromResult(MediaPlayerStatusEnum.Stopped);
+        }
+        catch (OperationCanceledException)
         {
-            return MediaPlayerStatusEnum.Stopped;
+            _log.Information("Playback of channel {channelName} with url {channelUrl} was cancelled.",
+                channel.NAME, channel.Url);
+
+            media.Dispose();
+            mediaplayer.Dispose();
+        }
+        catch (Exception ex)
+        {
+            _log.Error("An error occurred while trying to play channel {channelName} with url {channelUrl}. Exception: {exceptionMessage}",
+                channel.NAME, channel.Url, ex.Message);
         }
 
         return await Task.FromResult(MediaPlayerStatusEnum.Playing);
-
-
     }
 
-    public async Task<MediaPlayerStatusEnum> Play(Channel channel, CancellationToken cancellationToken)
+    public async Task<MediaPlayerStatusEnum> Play(string pathToFile)
+    {
+        ArgumentException.ThrowIfNullOrEmpty(pathToFile, nameof(pathToFile));
+        
+        Channel channel = new()
+        {
+            NAME = "LocalFile",
+            Url = pathToFile
+        };
+
+        MediaPlayerStatusEnum mediaPlayerStatusEnum = MediaPlayerStatusEnum.Playing;
+
+        try
+        {
+            Task playVideo = Task.Factory.StartNew(async () => { await PlayVideo(channel); }
+                , _cancellationTokenSource.Token);
+
+            if (playVideo != null && (playVideo.IsCompletedSuccessfully || playVideo.IsCanceled))
+            {
+                mediaPlayerStatusEnum = MediaPlayerStatusEnum.Stopped;
+            }
+        }
+        catch (Exception)
+        {
+            _log.Information("Playback of channel {channelName} with url {channelUrl} was cancelled.",
+                channel.NAME, channel.Url);
+        }
+
+        return await Task.FromResult(mediaPlayerStatusEnum);
+    }
+
+    public async Task<MediaPlayerStatusEnum> Play(Channel channel)
     {
         ArgumentNullException.ThrowIfNull(channel, nameof(channel));    
         ArgumentException.ThrowIfNullOrEmpty(channel.Url, nameof(channel.Url));
 
-        Task task = Task.Run(async () =>
+        MediaPlayerStatusEnum mediaPlayerStatusEnum = MediaPlayerStatusEnum.Playing;
+
+        try
         {
-            using Media media = new(_libVlc, channel.Url, FromType.FromLocation);
-            using MediaPlayer mediaplayer = new(media);
+            Task playVideo = Task.Factory.StartNew(async () => { await PlayVideo(channel); }
+               , _cancellationTokenSource.Token);
 
-            try
-            {    
-                // Create a TaskCompletionSource to signal when the video finishes
-                TaskCompletionSource<bool> videoFinishedSource = new();
-
-                // Subscribe to the EndReached event
-                mediaplayer.EndReached += (sender, e) =>
-                {
-                    _log.Verbose("Video name: {name} link:{httpLink} ended", channel.NAME, channel.Url);
-                    videoFinishedSource.SetResult(true);
-                };
-
-                mediaplayer.Play();
-
-                bool b = await videoFinishedSource.Task;
-
-                mediaplayer.Stop();
-            }
-            catch(TaskCanceledException)
+            
+            if (playVideo.IsCompletedSuccessfully || playVideo.IsCanceled)            
             {
-                mediaplayer?.Stop();
-                _log.Information("Playback of channel {channelName} with url {channelUrl} was cancelled.",
-                    channel.NAME, channel.Url);
+                mediaPlayerStatusEnum = MediaPlayerStatusEnum.Stopped;
             }
-            catch (Exception ex)
-            {
-                _log.Error("An error occurred while trying to play channel {channelName} with url {channelUrl}. Exception: {exceptionMessage}",
-                    channel.NAME, channel.Url, ex.Message);
-            }
-        }, cancellationToken);
-
-
-        if (task.IsCompletedSuccessfully || task.IsCanceled)
+        }
+        catch (Exception)
         {
-            return MediaPlayerStatusEnum.Stopped;
+            _log.Information("Playback of channel {channelName} with url {channelUrl} was cancelled.",
+                channel.NAME, channel.Url);
         }
 
-        return await Task.FromResult(MediaPlayerStatusEnum.Playing);
+        return await Task.FromResult(mediaPlayerStatusEnum);
+    }
+
+    public async Task<MediaPlayerStatusEnum> Stop()
+    {
+        _cancellationTokenSource.Cancel();
+
+        
+
+        return await Task.FromResult(MediaPlayerStatusEnum.Stopped);
     }
 }

@@ -43,7 +43,7 @@ public class PlayManager(ILogger logger, IMediaPlayerWrapper mediaPlayerWrapper,
             return await Task.FromResult(responseObject);
         }
 
-        await _mediaPlayerWrapper.Play(pathToFile, cancellationToken);
+        await _mediaPlayerWrapper.Play(pathToFile);
 
         responseObject = new(ResponseEnum.Success, 1);
         return responseObject;
@@ -57,7 +57,7 @@ public class PlayManager(ILogger logger, IMediaPlayerWrapper mediaPlayerWrapper,
 
         ResponseObject<int> responseObject;
 
-        await _mediaPlayerWrapper.Play(channel, cancellationToken);
+        await _mediaPlayerWrapper.Play(channel);
 
         responseObject = new(ResponseEnum.Success, 1);
         return responseObject;
@@ -71,5 +71,12 @@ public class PlayManager(ILogger logger, IMediaPlayerWrapper mediaPlayerWrapper,
     public Task<ResponseObject<int>> Record(Channel channel, CancellationToken cancellationToken)
     {
         throw new NotImplementedException();
+    }
+
+    public async Task<ResponseObject<int>> Stop()
+    {
+        MediaPlayerStatusEnum mediaPlayerStatusEnum = await _mediaPlayerWrapper.Stop();
+
+        return new ResponseObject<int>(ResponseEnum.Success, 1);
     }
 }

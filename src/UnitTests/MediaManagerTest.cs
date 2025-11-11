@@ -49,7 +49,7 @@ public class MediaManagerTest
     public async Task Play_PathFound_ShouldSucceed(string path)
     {
         _fileManager.Setup(s => s.Exists(It.IsAny<string>())).Returns(true);
-        _mediaPlayerWrapper.Setup(s => s.Play(It.IsAny<string>(), It.IsAny<CancellationToken>()));      
+        _mediaPlayerWrapper.Setup(s => s.Play(It.IsAny<string>()));      
 
         ResponseObject<int> responseObject = await SystemUnderTest.Play(path, _cancellationToken);
         Assert.Equal(ResponseEnum.Success, responseObject.Response);

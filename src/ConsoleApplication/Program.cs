@@ -1,5 +1,4 @@
-﻿
-using Core;
+﻿using Core;
 using Core.Abstraction;
 using Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
@@ -11,7 +10,6 @@ using Core.Features.Playlist;
 using ConsoleApplication.Abstractions;
 using ConsoleApplication.OptionCommandLineHandler;
 using System.CommandLine;
-
 
 class Program
 {
@@ -31,7 +29,6 @@ class Program
             .AddJsonFile("application_language.en.json", optional: true, reloadOnChange: true)
             .Build();
 
-
         // Create service collection and register services
         var services = new ServiceCollection();
 
@@ -50,6 +47,8 @@ class Program
         services.AddTransient<IRequestManager, RequestManager>();
         services.AddTransient<ICommandLineHandler, CommandLineHandler>();
 
+        services.AddSingleton(new CancellationTokenSource());
+
         // string baseUri = config.GetValue<string>("AppSettings:BaseUri") ?? string.Empty;
         // services.AddHttpClient(Constants.HttpClientUrl, (httpClient) =>
         // {
@@ -62,7 +61,7 @@ class Program
         var serviceProvider = services.BuildServiceProvider();
 
         ICommandLineHandler? commandLineHandler = serviceProvider.GetService<ICommandLineHandler>();
-        CancellationToken cancellationToken = new CancellationToken();
+        CancellationToken cancellationToken = new();
 
         if (commandLineHandler != null)
         {

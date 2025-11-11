@@ -1,7 +1,8 @@
-using System.CommandLine;
+using ConsoleApplication.Abstractions;
+using Core;
 using Core.Abstraction;
 using Core.Domain;
-using ConsoleApplication.Abstractions;
+using System.CommandLine;
 using System.CommandLine.NamingConventionBinder;
 
 namespace ConsoleApplication.OptionCommandLineHandler;
@@ -84,7 +85,7 @@ public class CommandLineHandler(IPlayRequestManager playManager, IRequestManager
 
 
 
-       // Define the positional argument
+        // Define the positional argument
         Argument<string> playUrlArgument = new("playUrl");
         // Define the command
         Command playUrlCommand = new (
@@ -117,11 +118,29 @@ public class CommandLineHandler(IPlayRequestManager playManager, IRequestManager
             CancellationToken cancellationToken = new();
             ResponseObject<int> responseObject = await _playManager.Play(channelToPlay, cancellationToken);
         });
- 
+
+
+        // Define the positional argument
+        //Argument<string> stopArgument = new("stop");
+        // Define the command
+        Command stopCommand = new(
+            name: "-stop",
+            description: $"Stop");
+
+        stopCommand.SetAction(async (parseResult) =>
+        {
+            // Debug logging
+            _logger.Verbose("Parsing result tokens: {tokens}",
+            string.Join(", ", parseResult.Tokens.Select(t => t.Value)));
+
+            ResponseObject<int> responseObject = await _playManager.Stop();
+        });
+
         rootCommand.Subcommands.Add(searchChannelCommand);
         rootCommand.Subcommands.Add(playListCommand);
         rootCommand.Subcommands.Add(setM3u8Command);
         rootCommand.Subcommands.Add(playUrlCommand);
+        rootCommand.Subcommands.Add(stopCommand);
 
         return await Task.FromResult(rootCommand);
     }
