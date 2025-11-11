@@ -50,7 +50,7 @@ public class MediaPlayerWrapper : IMediaPlayerWrapper
 
     private async Task<MediaPlayerStatusEnum> PlayVideo(Channel channel)
     {
-        ArgumentException.ThrowIfNullOrEmpty(channel.Url, nameof(channel.Url)); 
+        ArgumentException.ThrowIfNullOrEmpty(channel.Url, nameof(channel.Url));
 
         using Media media = new(_libVlc, channel.Url, FromType.FromLocation);
         using MediaPlayer mediaplayer = new(media);
@@ -104,7 +104,7 @@ public class MediaPlayerWrapper : IMediaPlayerWrapper
     public async Task<MediaPlayerStatusEnum> Play(string pathToFile)
     {
         ArgumentException.ThrowIfNullOrEmpty(pathToFile, nameof(pathToFile));
-        
+
         Channel channel = new()
         {
             Name = "LocalFile",
@@ -134,7 +134,7 @@ public class MediaPlayerWrapper : IMediaPlayerWrapper
 
     public async Task<MediaPlayerStatusEnum> Play(Channel channel)
     {
-        ArgumentNullException.ThrowIfNull(channel, nameof(channel));    
+        ArgumentNullException.ThrowIfNull(channel, nameof(channel));
         ArgumentException.ThrowIfNullOrEmpty(channel.Url, nameof(channel.Url));
 
         MediaPlayerStatusEnum mediaPlayerStatusEnum = MediaPlayerStatusEnum.Playing;
@@ -144,8 +144,8 @@ public class MediaPlayerWrapper : IMediaPlayerWrapper
             Task playVideo = Task.Factory.StartNew(async () => { await PlayVideo(channel); }
                , _cancellationTokenSource.Token);
 
-            
-            if (playVideo.IsCompletedSuccessfully || playVideo.IsCanceled)            
+
+            if (playVideo.IsCompletedSuccessfully || playVideo.IsCanceled)
             {
                 mediaPlayerStatusEnum = MediaPlayerStatusEnum.Stopped;
             }
@@ -163,7 +163,7 @@ public class MediaPlayerWrapper : IMediaPlayerWrapper
     {
         _cancellationTokenSource.Cancel();
 
-        
+
 
         return await Task.FromResult(MediaPlayerStatusEnum.Stopped);
     }

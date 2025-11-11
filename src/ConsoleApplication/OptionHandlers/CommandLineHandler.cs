@@ -1,8 +1,7 @@
-using System.CommandLine;
+using ConsoleApplication.Abstractions;
 using Core.Abstraction;
 using Core.Domain;
-using ConsoleApplication.Abstractions;
-using System.CommandLine.NamingConventionBinder;
+using System.CommandLine;
 
 namespace ConsoleApplication.OptionCommandLineHandler;
 
@@ -23,8 +22,8 @@ public class CommandLineHandler(IPlayManager playManager, IRequestManager reques
         RootCommand rootCommand = new();
 
         // Define an option for the root command
-         Option<string> mainOption = new("--bear");//todo: set as const variable
-         rootCommand.Options.Add(mainOption);
+        Option<string> mainOption = new("--bear");//todo: set as const variable
+        rootCommand.Options.Add(mainOption);
 
         Option<string> channelOption = new("ChannelList", "-channel");
         Command playListCommand = new("-channel_list", $"Channel lists")
@@ -41,9 +40,9 @@ public class CommandLineHandler(IPlayManager playManager, IRequestManager reques
             }
         });
 
-        Argument<string> searchChannelArgument = new ("searched term");
-        Option<string> channelSearchOption = new ("ChannelSearch", "-cs");
-        Command searchChannelCommand = new ("-channel_search", $"Search channels for {_httpLink}")
+        Argument<string> searchChannelArgument = new("searched term");
+        Option<string> channelSearchOption = new("ChannelSearch", "-cs");
+        Command searchChannelCommand = new("-channel_search", $"Search channels for {_httpLink}")
         {
             channelSearchOption
         };
@@ -63,7 +62,7 @@ public class CommandLineHandler(IPlayManager playManager, IRequestManager reques
         // Define the positional argument
         Argument<string> m3u8UrlArgument = new("m3u8Url");
         // Define the command
-        Command setM3u8Command = new (
+        Command setM3u8Command = new(
             name: "-set_m3u8",
             description: $"Build PlayList with the specified URL")
         {
@@ -73,22 +72,22 @@ public class CommandLineHandler(IPlayManager playManager, IRequestManager reques
         setM3u8Command.SetAction((parseResult) =>
         {
             // Debug logging
-            _logger.Verbose("Parsing result tokens: {tokens}", 
+            _logger.Verbose("Parsing result tokens: {tokens}",
             string.Join(", ", parseResult.Tokens.Select(t => t.Value)));
 
             var optionValue = parseResult.GetValue(m3u8UrlArgument);
-             _logger.Verbose("Option value: '{value}'", optionValue ?? "NULL");
-            
+            _logger.Verbose("Option value: '{value}'", optionValue ?? "NULL");
+
             _httpLink = optionValue ?? string.Empty;
             _logger.Verbose("Final httpLink: '{httpLink}'", _httpLink);
         });
 
 
 
-       // Define the positional argument
+        // Define the positional argument
         Argument<string> playUrlArgument = new("playUrl");
         // Define the command
-        Command playUrlCommand = new (
+        Command playUrlCommand = new(
             name: "-play_url",
             description: $"Play url with configured media player")
         {
@@ -112,9 +111,9 @@ public class CommandLineHandler(IPlayManager playManager, IRequestManager reques
 
             ResponseObject<int> responseObject = await _playManager.PlayM3u8(urlOption);
         });
- 
 
-      
+
+
         rootCommand.Subcommands.Add(searchChannelCommand);
         rootCommand.Subcommands.Add(playListCommand);
         rootCommand.Subcommands.Add(setM3u8Command);

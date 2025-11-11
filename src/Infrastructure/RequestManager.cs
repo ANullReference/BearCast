@@ -81,11 +81,11 @@ public class RequestManager : IRequestManager
 
         //_playlist = new Playlist();
 
-        using (StringReader reader = new (playlistString))
+        using (StringReader reader = new(playlistString))
         {
             string firstLine = reader.ReadLine() ?? string.Empty;
-            
-            Playlist playlist = new Playlist(){ ExtM3U = firstLine } ;
+
+            Playlist playlist = new Playlist() { ExtM3U = firstLine };
 
             string line, nextLine;
 
@@ -178,7 +178,7 @@ public class RequestManager : IRequestManager
         _logger.Debug("Refresh playlist request in method {methodName}", nameof(RefreshPlaylist));
         _playlist = null;
         return await GetPlaylist(url);
-    }  
+    }
 
     public async Task<IEnumerable<Channel>> SearchPlaylist(string name)
     {

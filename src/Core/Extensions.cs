@@ -8,7 +8,7 @@ public static class Extensions
         {
             return s;
         }
-        
+
         return s.Replace("\"", string.Empty);
     }
 
