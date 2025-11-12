@@ -82,7 +82,7 @@ public class MediaPlayerWrapper : IMediaPlayerWrapper
             bool b = await videoFinishedSource.Task;
 
             mediaplayer.Stop();
-            return await Task.FromResult(MediaPlayerStatusEnum.Stopped);
+            return MediaPlayerStatusEnum.Stopped;
         }
         catch (OperationCanceledException)
         {
@@ -98,7 +98,7 @@ public class MediaPlayerWrapper : IMediaPlayerWrapper
                 channel.NAME, channel.Url, ex.Message);
         }
 
-        return await Task.FromResult(MediaPlayerStatusEnum.Playing);
+        return MediaPlayerStatusEnum.Playing;
     }
 
     public async Task<MediaPlayerStatusEnum> Play(string pathToFile)
@@ -111,25 +111,7 @@ public class MediaPlayerWrapper : IMediaPlayerWrapper
             Url = pathToFile
         };
 
-        MediaPlayerStatusEnum mediaPlayerStatusEnum = MediaPlayerStatusEnum.Playing;
-
-        try
-        {
-            Task playVideo = Task.Factory.StartNew(async () => { await PlayVideo(channel); }
-                , _cancellationTokenSource.Token);
-
-            if (playVideo != null && (playVideo.IsCompletedSuccessfully || playVideo.IsCanceled))
-            {
-                mediaPlayerStatusEnum = MediaPlayerStatusEnum.Stopped;
-            }
-        }
-        catch (Exception)
-        {
-            _log.Information("Playback of channel {channelName} with url {channelUrl} was cancelled.",
-                channel.NAME, channel.Url);
-        }
-
-        return await Task.FromResult(mediaPlayerStatusEnum);
+        return await Play(channel);
     }
 
     public async Task<MediaPlayerStatusEnum> Play(Channel channel)
@@ -161,10 +143,7 @@ public class MediaPlayerWrapper : IMediaPlayerWrapper
 
     public async Task<MediaPlayerStatusEnum> Stop()
     {
-        _cancellationTokenSource.Cancel();
-
-        
-
-        return await Task.FromResult(MediaPlayerStatusEnum.Stopped);
+        await _cancellationTokenSource.CancelAsync();
+        return MediaPlayerStatusEnum.Stopped;
     }
 }
