@@ -50,7 +50,7 @@ public class MediaPlayerWrapper : IMediaPlayerWrapper
 
     private async Task<MediaPlayerStatusEnum> PlayVideo(Channel channel)
     {
-        ArgumentException.ThrowIfNullOrEmpty(channel.Url, nameof(channel.Url)); 
+        ArgumentException.ThrowIfNullOrEmpty(channel.Url, nameof(channel.Url));
 
         using Media media = new(_libVlc, channel.Url, FromType.FromLocation);
         using MediaPlayer mediaplayer = new(media);
@@ -63,7 +63,7 @@ public class MediaPlayerWrapper : IMediaPlayerWrapper
             // Subscribe to the EndReached event
             mediaplayer.EndReached += (sender, e) =>
             {
-                _log.Verbose("Video name: {name} link:{url} ended", channel.NAME, channel.Url);
+                _log.Verbose("Video name: {name} link:{url} ended", channel.Name, channel.Url);
                 mediaplayer.Stop();
                 videoFinishedSource.SetResult(true);
             };
@@ -87,7 +87,7 @@ public class MediaPlayerWrapper : IMediaPlayerWrapper
         catch (OperationCanceledException)
         {
             _log.Information("Playback of channel {channelName} with url {channelUrl} was cancelled.",
-                channel.NAME, channel.Url);
+                channel.Name, channel.Url);
 
             media.Dispose();
             mediaplayer.Dispose();
@@ -95,7 +95,7 @@ public class MediaPlayerWrapper : IMediaPlayerWrapper
         catch (Exception ex)
         {
             _log.Error("An error occurred while trying to play channel {channelName} with url {channelUrl}. Exception: {exceptionMessage}",
-                channel.NAME, channel.Url, ex.Message);
+                channel.Name, channel.Url, ex.Message);
         }
 
         return MediaPlayerStatusEnum.Playing;
@@ -104,10 +104,10 @@ public class MediaPlayerWrapper : IMediaPlayerWrapper
     public async Task<MediaPlayerStatusEnum> Play(string pathToFile)
     {
         ArgumentException.ThrowIfNullOrEmpty(pathToFile, nameof(pathToFile));
-        
+
         Channel channel = new()
         {
-            NAME = "LocalFile",
+            Name = "LocalFile",
             Url = pathToFile
         };
 
@@ -116,7 +116,7 @@ public class MediaPlayerWrapper : IMediaPlayerWrapper
 
     public async Task<MediaPlayerStatusEnum> Play(Channel channel)
     {
-        ArgumentNullException.ThrowIfNull(channel, nameof(channel));    
+        ArgumentNullException.ThrowIfNull(channel, nameof(channel));
         ArgumentException.ThrowIfNullOrEmpty(channel.Url, nameof(channel.Url));
 
         MediaPlayerStatusEnum mediaPlayerStatusEnum = MediaPlayerStatusEnum.Playing;
@@ -126,8 +126,8 @@ public class MediaPlayerWrapper : IMediaPlayerWrapper
             Task playVideo = Task.Factory.StartNew(async () => { await PlayVideo(channel); }
                , _cancellationTokenSource.Token);
 
-            
-            if (playVideo.IsCompletedSuccessfully || playVideo.IsCanceled)            
+
+            if (playVideo.IsCompletedSuccessfully || playVideo.IsCanceled)
             {
                 mediaPlayerStatusEnum = MediaPlayerStatusEnum.Stopped;
             }
@@ -135,7 +135,7 @@ public class MediaPlayerWrapper : IMediaPlayerWrapper
         catch (Exception)
         {
             _log.Information("Playback of channel {channelName} with url {channelUrl} was cancelled.",
-                channel.NAME, channel.Url);
+                channel.Name, channel.Url);
         }
 
         return await Task.FromResult(mediaPlayerStatusEnum);

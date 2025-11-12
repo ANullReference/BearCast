@@ -50,7 +50,7 @@ public class PlayManager(ILogger logger, IMediaPlayerWrapper mediaPlayerWrapper,
     }
 
     public async Task<ResponseObject<int>> Play(Channel channel, CancellationToken cancellationToken)
-    { 
+    {
         ArgumentNullException.ThrowIfNull(channel, nameof(channel));
         ArgumentException.ThrowIfNullOrEmpty(channel.Url, nameof(channel.Url));
         ArgumentException.ThrowIfNullOrWhiteSpace(channel.Url, nameof(channel.Url));

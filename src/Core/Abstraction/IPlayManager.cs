@@ -9,6 +9,4 @@ public interface IPlayRequestManager
     Task<ResponseObject<int>> Record(Channel channel, CancellationToken cancellationToken);
     Task<ResponseObject<int>> Pause(Channel channel, CancellationToken cancellationToken);
     Task<ResponseObject<int>> Stop();
-
-
 }

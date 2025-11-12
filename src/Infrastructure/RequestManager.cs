@@ -81,11 +81,11 @@ public class RequestManager : IRequestManager
 
         //_playlist = new Playlist();
 
-        using (StringReader reader = new (playlistString))
+        using (StringReader reader = new(playlistString))
         {
             string firstLine = reader.ReadLine() ?? string.Empty;
-            
-            Playlist playlist = new Playlist(){ ExtM3U = firstLine } ;
+
+            Playlist playlist = new Playlist() { ExtM3U = firstLine };
 
             string line, nextLine;
 
@@ -130,7 +130,7 @@ public class RequestManager : IRequestManager
                     }
                     else if (key.Contains("NAME", StringComparison.OrdinalIgnoreCase))
                     {
-                        channel.NAME = keyValue[1].CleanString();
+                        channel.Name = keyValue[1].CleanString();
                     }
                     else if (key.Contains("LOGO", StringComparison.OrdinalIgnoreCase))
                     {
@@ -178,7 +178,7 @@ public class RequestManager : IRequestManager
         _logger.Debug("Refresh playlist request in method {methodName}", nameof(RefreshPlaylist));
         _playlist = null;
         return await GetPlaylist(url);
-    }  
+    }
 
     public async Task<IEnumerable<Channel>> SearchPlaylist(string name)
     {
@@ -187,7 +187,7 @@ public class RequestManager : IRequestManager
 
         _logger.Debug("Searching playlist In method {methodName}", nameof(SearchPlaylist));
 
-        List<Channel> channels = [.. _playlist.Channels.Where(w => w.NAME.Contains(name))];
+        List<Channel> channels = [.. _playlist.Channels.Where(w => w.Name.Contains(name))];
 
         return await Task.FromResult(channels);
     }

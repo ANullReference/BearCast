@@ -13,7 +13,7 @@ public enum BareCastLogLevel
 
 public enum ResponseEnum
 {
-    Fail, 
+    Fail,
     Success
 }
 

@@ -34,7 +34,7 @@ public class Channel
     public string Resolution { get; set; } = string.Empty;
 
     [DisplayName("NAME")]
-    public string NAME { get; set; } = string.Empty;
+    public string Name { get; set; } = string.Empty;
 
     [DisplayName("LOGO_URL")]
     public string LogoUrl { get; set; } = string.Empty;

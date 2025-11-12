@@ -1,15 +1,15 @@
-﻿using Core;
-using Core.Abstraction;
-using Infrastructure;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Configuration;
-using Core.Domain;
-using LibVLCSharp.Shared;
-using System.Globalization;
-using Core.Features.Playlist;
-using ConsoleApplication.Abstractions;
+﻿using ConsoleApplication.Abstractions;
 using ConsoleApplication.OptionCommandLineHandler;
+using Core;
+using Core.Abstraction;
+using Core.Domain;
+using Core.Features.Playlist;
+using Infrastructure;
+using LibVLCSharp.Shared;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using System.CommandLine;
+using System.Globalization;
 
 class Program
 {
@@ -67,11 +67,11 @@ class Program
         {
             string command = string.Empty;
             RootCommand rootCommand = await commandLineHandler.CreateRootCommand();
-            
+
             do
             {
                 ParseResult parseResult = rootCommand.Parse(args);
-                Environment.ExitCode = await parseResult.InvokeAsync(null,cancellationToken);
+                Environment.ExitCode = await parseResult.InvokeAsync(null, cancellationToken);
                 Console.Write("Command: ");
                 command = Console.ReadLine() ?? string.Empty;
                 args = command.Split(" ");
