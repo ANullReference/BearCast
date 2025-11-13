@@ -25,7 +25,7 @@ public class MediaPlayerWrapper : IMediaPlayerWrapper
     private ILogger _log;
     private ApplicationLanguage _appLanguage;
     private IHttpClientFactory _httpClientFactory;
-    CancellationTokenSource _cancellationTokenSource;// todo: dependency inject this into a wrapper and imitate the cancel behavior
+    CancellationTokenSource? _cancellationTokenSource;// todo: dependency inject this into a wrapper and imitate the cancel behavior
 
     //private Task? _playVideo;
 
@@ -36,14 +36,14 @@ public class MediaPlayerWrapper : IMediaPlayerWrapper
     /// Concrete implementation of video playing.
     /// </summary>
     /// <param name="libVLC"></param>
-    public MediaPlayerWrapper(LibVLC libVLC, ILogger logger, IOptions<ApplicationLanguage> options, IHttpClientFactory httpClientFactory, CancellationTokenSource cancellationTokenSource)
+    public MediaPlayerWrapper(LibVLC libVLC, ILogger logger, IOptions<ApplicationLanguage> options, IHttpClientFactory httpClientFactory)
     {
         _libVlc = libVLC;
         _log = logger;
         _appLanguage = options.Value;
         _httpClientFactory = httpClientFactory;
 
-        _cancellationTokenSource = cancellationTokenSource;// todo: dependency inject this into a wrapper and imitate the cancel behavior
+        //_cancellationTokenSource = cancellationTokenSource;// todo: dependency inject this into a wrapper and imitate the cancel behavior
         LibVLCSharp.Shared.Core.Initialize();
     }
 
@@ -54,6 +54,11 @@ public class MediaPlayerWrapper : IMediaPlayerWrapper
 
         using Media media = new(_libVlc, channel.Url, FromType.FromLocation);
         using MediaPlayer mediaplayer = new(media);
+
+        if (_cancellationTokenSource is null)
+        {
+            _cancellationTokenSource = new CancellationTokenSource();
+        }
 
         try
         {
@@ -114,12 +119,24 @@ public class MediaPlayerWrapper : IMediaPlayerWrapper
         return await Play(channel);
     }
 
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="channel"></param>
+    /// <returns></returns>
     public async Task<MediaPlayerStatusEnum> Play(Channel channel)
     {
         ArgumentNullException.ThrowIfNull(channel, nameof(channel));
         ArgumentException.ThrowIfNullOrEmpty(channel.Url, nameof(channel.Url));
 
         MediaPlayerStatusEnum mediaPlayerStatusEnum = MediaPlayerStatusEnum.Playing;
+
+        if (_cancellationTokenSource != null)
+        {
+            await _cancellationTokenSource.CancelAsync();
+        }
+
+        _cancellationTokenSource = new CancellationTokenSource();
 
         try
         {
@@ -141,9 +158,17 @@ public class MediaPlayerWrapper : IMediaPlayerWrapper
         return await Task.FromResult(mediaPlayerStatusEnum);
     }
 
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <returns></returns>
     public async Task<MediaPlayerStatusEnum> Stop()
     {
-        await _cancellationTokenSource.CancelAsync();
+        if (_cancellationTokenSource != null)
+        {
+            await _cancellationTokenSource.CancelAsync();
+        }
+
         return MediaPlayerStatusEnum.Stopped;
     }
 }

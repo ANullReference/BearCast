@@ -1,8 +1,12 @@
+using Core.Domain;
+
 namespace Core.Abstraction;
 
 public interface IMediaPlayerWrapper
 {
-    Task Play(string pathToFile);
+    Task<MediaPlayerStatusEnum> Play(Channel channel);
 
-    Task PlayM3u8(string httpLink);
+    Task<MediaPlayerStatusEnum> Play(string url);
+
+    Task<MediaPlayerStatusEnum> Stop();
 }
