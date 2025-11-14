@@ -8,9 +8,9 @@ namespace ConsoleApplication.OptionCommandLineHandler;
 /// <summary>
 /// 
 /// </summary>
-public class CommandLineHandler(IPlayManager playManager, IRequestManager requestManager, ILogger logger) : ICommandLineHandler
+public class CommandLineHandler(IPlayRequestManager playManager, IRequestManager requestManager, ILogger logger) : ICommandLineHandler
 {
-    private IPlayManager _playManager = playManager;
+    private IPlayRequestManager _playManager = playManager;
     private IRequestManager _requestManager = requestManager;
     private ILogger _logger = logger;
     private string _httpLink = string.Empty;
@@ -109,15 +109,29 @@ public class CommandLineHandler(IPlayManager playManager, IRequestManager reques
                 return;
             }
 
-            ResponseObject<int> responseObject = await _playManager.PlayM3u8(urlOption);
+            Channel channel = new()
+            {
+                Url = urlOption
+            };
+
+            ResponseObject<int> responseObject = await _playManager.Play(channel);
         });
 
+        // Define the command
+        Command stopCommand = new(
+            name: "-stop",
+            description: $"Stop current play");
 
-
+        stopCommand.SetAction(async (parseResult) =>
+        {
+            ResponseObject<int> responseObject = await _playManager.Stop();
+        });
+        
         rootCommand.Subcommands.Add(searchChannelCommand);
         rootCommand.Subcommands.Add(playListCommand);
         rootCommand.Subcommands.Add(setM3u8Command);
         rootCommand.Subcommands.Add(playUrlCommand);
+        rootCommand.Subcommands.Add(stopCommand);
 
         return await Task.FromResult(rootCommand);
     }

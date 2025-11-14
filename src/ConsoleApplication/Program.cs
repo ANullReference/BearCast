@@ -47,14 +47,6 @@ class Program
         services.AddTransient<IRequestManager, RequestManager>();
         services.AddTransient<ICommandLineHandler, CommandLineHandler>();
 
-        services.AddSingleton(new CancellationTokenSource());
-
-        // string baseUri = config.GetValue<string>("AppSettings:BaseUri") ?? string.Empty;
-        // services.AddHttpClient(Constants.HttpClientUrl, (httpClient) =>
-        // {
-        //     httpClient.BaseAddress = new Uri(baseUri);
-        // });
-
         services.AddHttpClient(Constants.HttpClientUrl);
 
         // Build service provider

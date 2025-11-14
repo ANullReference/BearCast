@@ -23,12 +23,7 @@ public class PlayManager(ILogger logger, IMediaPlayerWrapper mediaPlayerWrapper,
         throw new NotImplementedException();
     }
 
-    public Task<ResponseObject<int>> Pause(Channel channel, CancellationToken cancellationToken)
-    {
-        throw new NotImplementedException();
-    }
-
-    public async Task<ResponseObject<int>> Play(string pathToFile, CancellationToken cancellationToken)
+    public async Task<ResponseObject<int>> Play(string pathToFile)
     {
         ArgumentException.ThrowIfNullOrEmpty(pathToFile, nameof(pathToFile));
         bool doesFileExist = _fileManager.Exists(pathToFile);
@@ -49,7 +44,7 @@ public class PlayManager(ILogger logger, IMediaPlayerWrapper mediaPlayerWrapper,
         return responseObject;
     }
 
-    public async Task<ResponseObject<int>> Play(Channel channel, CancellationToken cancellationToken)
+    public async Task<ResponseObject<int>> Play(Channel channel)
     {
         ArgumentNullException.ThrowIfNull(channel, nameof(channel));
         ArgumentException.ThrowIfNullOrEmpty(channel.Url, nameof(channel.Url));
