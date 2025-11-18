@@ -4,13 +4,13 @@ using Core.Domain;
 
 namespace Infrastructure;
 
-public class RequestManager : IRequestManager
+public class PlaylistRequestManager : IPlaylistRequestManager
 {
     private IHttpClientFactory _httpClientFactory;
     private ILogger _logger;
     private Playlist? _playlist;// TODO: consider ICacheManager to handle playlist instance
 
-    public RequestManager(IHttpClientFactory httpClientFactory, ILogger logger)
+    public PlaylistRequestManager(IHttpClientFactory httpClientFactory, ILogger logger)
     {
         _httpClientFactory = httpClientFactory;
         _logger = logger;
@@ -85,7 +85,10 @@ public class RequestManager : IRequestManager
         {
             string firstLine = reader.ReadLine() ?? string.Empty;
 
-            Playlist playlist = new Playlist() { ExtM3U = firstLine };
+            Uri uri = new (url);
+            string baseUrl = uri.GetLeftPart(UriPartial.Authority);
+
+            Playlist playlist = new(){ ExtM3U = firstLine, BaseUrl = baseUrl };
 
             string line, nextLine;
 
@@ -190,5 +193,23 @@ public class RequestManager : IRequestManager
         List<Channel> channels = [.. _playlist.Channels.Where(w => w.Name.Contains(name))];
 
         return await Task.FromResult(channels);
+    }
+
+    public async Task<List<Uri>> Parsem3u8SegmentUrls(string playlistText, string baseUri)
+    {
+        ArgumentException.ThrowIfNullOrEmpty(playlistText);
+        ArgumentException.ThrowIfNullOrEmpty(baseUri);
+
+        if (!baseUri.EndsWith('/'))
+        {
+            baseUri += '/';
+        }
+
+        List<Uri> segmentUrls = [.. playlistText
+            .Split(Environment.NewLine)
+            .Where(line => !line.StartsWith('#') && !string.IsNullOrWhiteSpace(line))
+            .Select(s => new Uri(baseUri + s.Trim()))];
+
+        return await Task.FromResult(segmentUrls);
     }
 }

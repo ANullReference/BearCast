@@ -26,6 +26,8 @@ public class MediaPlayerWrapper : IMediaPlayerWrapper
     private ApplicationLanguage _appLanguage;
     private IHttpClientFactory _httpClientFactory;
     CancellationTokenSource? _cancellationTokenSource;// todo: dependency inject this into a wrapper and imitate the cancel behavior
+    private IFileManager _fileManager;
+    private IParsePlaylist _ParsePlaylist;
 
     //private Task? _playVideo;
 
@@ -36,15 +38,17 @@ public class MediaPlayerWrapper : IMediaPlayerWrapper
     /// Concrete implementation of video playing.
     /// </summary>
     /// <param name="libVLC"></param>
-    public MediaPlayerWrapper(LibVLC libVLC, ILogger logger, IOptions<ApplicationLanguage> options, IHttpClientFactory httpClientFactory)
+    public MediaPlayerWrapper(LibVLC libVLC, ILogger logger, IOptions<ApplicationLanguage> options, IHttpClientFactory httpClientFactory, IFileManager fileManager, IParsePlaylist parsePlaylist)
     {
         _libVlc = libVLC;
         _log = logger;
         _appLanguage = options.Value;
         _httpClientFactory = httpClientFactory;
+        _fileManager = fileManager;
 
         //_cancellationTokenSource = cancellationTokenSource;// todo: dependency inject this into a wrapper and imitate the cancel behavior
         LibVLCSharp.Shared.Core.Initialize();
+        _ParsePlaylist = parsePlaylist;
     }
 
 
@@ -170,5 +174,35 @@ public class MediaPlayerWrapper : IMediaPlayerWrapper
         }
 
         return MediaPlayerStatusEnum.Stopped;
+    }
+
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="channel"></param>
+    /// <param name="startDate"></param>
+    /// <param name="endDate"></param>
+    /// <returns></returns>
+    /// <exception cref="NotImplementedException"></exception>
+    public async Task<MediaPlayerStatusEnum> Record(Channel channel, DateTime startDate, DateTime endDate, string saveLocation, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(channel, nameof(channel));
+        ArgumentException.ThrowIfNullOrEmpty(channel.Url, nameof(channel.Url)); 
+
+        HttpClient httpClient = _httpClientFactory.CreateClient(Constants.TvHttpClientUrl);
+
+        using FileStream fileOutputStream = _fileManager.FileStream(channel.Url, FileMode.Create, FileAccess.Write, FileShare.None);
+
+        
+        List<Uri> uris = await _ParsePlaylist.Parsem3u8SegmentUrls(channel.Url, channel.BaseUrl);   
+
+
+        byte[] segmentBytes = await httpClient.GetByteArrayAsync(channel.Url, cancellationToken);
+        await fileOutputStream.WriteAsync(segmentBytes, cancellationToken);
+
+
+
+
+        throw new NotImplementedException();
     }
 }

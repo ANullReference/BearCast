@@ -9,4 +9,6 @@ public interface IMediaPlayerWrapper
     Task<MediaPlayerStatusEnum> Play(string url);
 
     Task<MediaPlayerStatusEnum> Stop();
+
+    Task<MediaPlayerStatusEnum> Record(Channel channel, DateTime startDate, DateTime endDate, string saveLocation, CancellationToken cancellationToken);
 }

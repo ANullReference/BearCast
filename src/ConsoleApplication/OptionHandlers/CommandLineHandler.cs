@@ -8,10 +8,10 @@ namespace ConsoleApplication.OptionCommandLineHandler;
 /// <summary>
 /// 
 /// </summary>
-public class CommandLineHandler(IPlayRequestManager playManager, IRequestManager requestManager, ILogger logger) : ICommandLineHandler
+public class CommandLineHandler(IPlayRequestManager playManager, IPlaylistRequestManager requestManager, ILogger logger) : ICommandLineHandler
 {
     private IPlayRequestManager _playManager = playManager;
-    private IRequestManager _requestManager = requestManager;
+    private IPlaylistRequestManager _requestManager = requestManager;
     private ILogger _logger = logger;
     private string _httpLink = string.Empty;
     private Playlist _playList = new();

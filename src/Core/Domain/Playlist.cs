@@ -15,6 +15,7 @@ public class Playlist
 
 
     public string ExtM3U { get; set; } = string.Empty;
+    public string BaseUrl { get; set; } = string.Empty;
 
     public List<Channel> Channels { get; set; } = [];
 }
@@ -50,4 +51,7 @@ public class Channel
 
     [DisplayName("Title")]
     public string Title { get; set; } = string.Empty;
+
+    [DisplayName("BaseUrl")]
+    public string BaseUrl { get; set; } = string.Empty; 
 }

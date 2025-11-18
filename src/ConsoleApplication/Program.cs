@@ -3,7 +3,6 @@ using ConsoleApplication.OptionCommandLineHandler;
 using Core;
 using Core.Abstraction;
 using Core.Domain;
-using Core.Features.Playlist;
 using Infrastructure;
 using LibVLCSharp.Shared;
 using Microsoft.Extensions.Configuration;
@@ -43,11 +42,11 @@ class Program
         services.AddSingleton((libVlc) => new LibVLC(enableDebugLogs: config.GetValue<bool>("AppSettings:EnableDebugLogs")));
         services.AddSingleton<IFileManager, FileManager>();
         services.AddTransient<IPlayRequestManager, PlayManager>();
-        services.AddTransient<IPlaylistManager, PlaylistManager>();
-        services.AddTransient<IRequestManager, RequestManager>();
+        services.AddTransient<IPlaylistRequestManager, PlaylistRequestManager>();
         services.AddTransient<ICommandLineHandler, CommandLineHandler>();
 
         services.AddHttpClient(Constants.HttpClientUrl);
+        services.AddHttpClient(Constants.TvHttpClientUrl);
 
         // Build service provider
         var serviceProvider = services.BuildServiceProvider();

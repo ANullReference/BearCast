@@ -8,4 +8,10 @@ public class FileManager : IFileManager
     {
         return File.Exists(path);
     }
+
+    public FileStream FileStream(string url, FileMode fileMode, FileAccess fileAccess, FileShare fileShare)
+    {
+        ArgumentNullException.ThrowIfNull(url, nameof(url));  
+        return new FileStream(url, fileMode, fileAccess, fileShare);
+    }
 }
